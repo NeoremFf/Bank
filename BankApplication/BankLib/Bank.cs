@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -10,7 +11,9 @@ namespace BankLib
         Ordinary,
         Deposit
     }
-    public class Bank<T> where T : Account
+
+    public class Bank<T> : IEnumerable
+        where T : Account
     {
         T[] accounts;
 
@@ -20,21 +23,23 @@ namespace BankLib
         {
             this.Name = name;
         }
+
         // метод создания счета
         public void Open(AccountType accountType, decimal sum,
-    AccountStateHandler addSumHandler, AccountStateHandler withdrawSumHandler,
-    AccountStateHandler calculationHandler, AccountStateHandler closeAccountHandler,
-    AccountStateHandler openAccountHandler)
+            AccountStateHandler addSumHandler, AccountStateHandler withdrawSumHandler,
+            AccountStateHandler calculationHandler, AccountStateHandler closeAccountHandler,
+            AccountStateHandler openAccountHandler)
         {
             T newAccount = null;
 
             switch (accountType)
             {
+                // Тип аккаунта
                 case AccountType.Ordinary:
-                    newAccount = new DemandAccount(sum, 1) as T;
+                    newAccount = new DemandAccount(sum, 0, AccountType.Ordinary) as T;
                     break;
                 case AccountType.Deposit:
-                    newAccount = new DepositAccount(sum, 40) as T;
+                    newAccount = new DepositAccount(sum, 12, AccountType.Deposit) as T;
                     break;
             }
 
@@ -60,6 +65,7 @@ namespace BankLib
 
             newAccount.Open();
         }
+
         //добавление средств на счет
         public void Put(decimal sum, int id)
         {
@@ -68,6 +74,7 @@ namespace BankLib
                 throw new Exception("Счет не найден");
             account.Put(sum);
         }
+
         // вывод средств
         public void Withdraw(decimal sum, int id)
         {
@@ -76,6 +83,7 @@ namespace BankLib
                 throw new Exception("Счет не найден");
             account.Withdraw(sum);
         }
+
         // закрытие счета
         public void Close(int id)
         {
@@ -98,18 +106,6 @@ namespace BankLib
                         tempAccounts[j++] = accounts[i];
                 }
                 accounts = tempAccounts;
-            }
-        }
-
-        // начисление процентов по счетам
-        public void CalculatePercentage()
-        {
-            if (accounts == null) // если массив не создан, выходим из метода
-                return;
-            for (int i = 0; i < accounts.Length; i++)
-            {
-                accounts[i].IncrementDays();
-                accounts[i].Calculate();
             }
         }
 
@@ -136,6 +132,35 @@ namespace BankLib
             }
             index = -1;
             return null;
+        }
+
+        public bool HasAccounts()
+        {
+            if (accounts == null || accounts.Length == 0)
+                return false;
+            else
+                return true;
+        }
+
+        public override string ToString()
+        {
+            string str = string.Empty;
+            for (int i = 0; i < accounts.Length; i++)
+            {
+                str += $"Аккаунт {accounts[i].Id}:\n - Тип: {accounts[i].type.ToString()}\n - Баланс: {accounts[i].Sum}\n";
+            }
+            return str;
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            if (accounts == null)
+                yield break;
+            for (int i = 0; i < accounts.Length; i++)
+            {
+                if (accounts[i].type == AccountType.Deposit)
+                    yield return accounts[i];
+            }
         }
     }
 }

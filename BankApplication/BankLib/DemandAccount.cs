@@ -6,7 +6,7 @@ namespace BankLib
 {
     public class DemandAccount : Account
     {
-        public DemandAccount(decimal sum, int percentage) : base(sum, percentage)
+        public DemandAccount(decimal sum, float percentage, AccountType _type) : base(sum, percentage, _type)
         {
         }
 

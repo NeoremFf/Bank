@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using BankLib;
 
 namespace BankApplication
@@ -8,14 +9,30 @@ namespace BankApplication
         static void Main(string[] args)
         {
             Bank<Account> bank = new Bank<Account>("GoldBank");
+            DateTime date = new DateTime();
+            date = DateTime.Today;
+            Console.WriteLine($"Добро пожаловать в {bank.Name}.\n");
             bool alive = true;
             while (alive)
             {
                 ConsoleColor color = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.DarkGreen; // выводим список команд зеленым цветом
-                Console.WriteLine("1. Открыть счет \t 2. Вывести средства  \t 3. Добавить на счет");
-                Console.WriteLine("4. Закрыть счет \t 5. Пропустить день \t 6. Выйти из программы");
-                Console.WriteLine("Введите номер пункта:");
+                // Работа с датой
+                Console.WriteLine($"Текущий день: {date:d}");
+                // Проверка 30-ти дневного периода
+                foreach (var acc in bank)
+                {
+                    Account accaunt = (Account)acc;
+                    if (CheckThirtyDayPeriod(accaunt, date))
+                    {
+                        Console.WriteLine($"Аккаунт {accaunt.Id}: Тридцатидневный период завершен.");
+                        accaunt.Calculate(date);
+                    }
+                }
+                //
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
+                Console.WriteLine("1. Открыть счет \t 3. Вывести средства  \t 5. Настройка даты \t 7. Выйти из программы");
+                Console.WriteLine("2. Закрыть счет \t 4. Пополнить счёт \t 6. Список всех аккаунтов");
+                Console.Write("Введите номер пункта: ");
                 Console.ForegroundColor = color;
                 try
                 {
@@ -27,31 +44,73 @@ namespace BankApplication
                             OpenAccount(bank);
                             break;
                         case 2:
-                            Withdraw(bank);
-                            break;
-                        case 3:
-                            Put(bank);
-                            break;
-                        case 4:
                             CloseAccount(bank);
                             break;
+                        case 3:
+                            Withdraw(bank);
+                            break;
+                        case 4:
+                            Put(bank);
+                            break;
                         case 5:
+                            SetDate(ref date);
                             break;
                         case 6:
+                            ShowAllAccounts(bank);
+                            break;
+                        case 7:
                             alive = false;
                             continue;
                     }
-                    bank.CalculatePercentage();
                 }
                 catch (Exception ex)
                 {
-                    // выводим сообщение об ошибке красным цветом
+                    // выводим сообщение об ошибке
                     color = Console.ForegroundColor;
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine(ex.Message);
                     Console.ForegroundColor = color;
                 }
+                finally
+                {
+                    Console.WriteLine("Нажмите любую клавишу для продолжения...");
+                    Console.ReadKey();
+                    Console.Clear();
+                }
             }
+        }
+
+        private static bool CheckThirtyDayPeriod(Account bankAcc, DateTime currentDateInBank)
+        {
+            DateTime addDaysToDate = bankAcc.dateOpen;
+            return currentDateInBank >= addDaysToDate.AddDays(30);
+        }
+
+        private static void SetDate(ref DateTime date)
+        {
+            Console.Write("1. Добавить N дней\n2. Добавить 31 дней (один период)\nВведите номер пункта: ");
+            int command = Convert.ToInt32(Console.ReadLine());
+            switch (command)
+            {
+                case 1:
+                    Console.Write("Введите количество дней: ");
+                    command = Convert.ToInt32(Console.ReadLine());
+                    date.AddDays(command);
+                    break;
+                case 2:
+                    command = 31;
+                    break;
+            }
+            date = date.AddDays((double)command);
+            Console.WriteLine($"К дате успешно добавленно {command} дней");
+        }
+
+        private static void ShowAllAccounts(Bank<Account> bank)
+        {
+            if (bank.HasAccounts())
+                Console.Write(bank);
+            else
+                Console.WriteLine("В банке нет аккаунтов.");
         }
 
         private static void OpenAccount(Bank<Account> bank)
@@ -59,7 +118,7 @@ namespace BankApplication
             Console.WriteLine("Укажите сумму для создания счета:");
 
             decimal sum = Convert.ToDecimal(Console.ReadLine());
-            Console.WriteLine("Выберите тип счета: 1. До востребования 2. Депозит");
+            Console.WriteLine("Выберите тип счета:\n1. До востребования\n2. Депозит");
             AccountType accountType;
 
             int type = Convert.ToInt32(Console.ReadLine());
@@ -91,9 +150,9 @@ namespace BankApplication
 
         private static void Put(Bank<Account> bank)
         {
-            Console.WriteLine("Укажите сумму, чтобы положить на счет:");
+            Console.Write("Укажите сумму, чтобы положить на счет: ");
             decimal sum = Convert.ToDecimal(Console.ReadLine());
-            Console.WriteLine("Введите Id счета:");
+            Console.Write("Введите Id счета: ");
             int id = Convert.ToInt32(Console.ReadLine());
             bank.Put(sum, id);
         }

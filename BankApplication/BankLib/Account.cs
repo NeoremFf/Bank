@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Collections.Generic;
 using System.Text;
 
@@ -18,21 +19,25 @@ namespace BankLib
         protected internal event AccountStateHandler Calculated;
 
         static int counter = 0;
-        protected int _days = 0; // время с момента открытия счета
+        public DateTime dateOpen { get; private set; }
 
-        public Account(decimal sum, int percentage)
+        public Account(decimal sum, float percentage, AccountType _type)
         {
             Sum = sum;
             Percentage = percentage;
             Id = ++counter;
+            type = _type;
+            dateOpen = DateTime.Now;
         }
 
         // Текущая сумма на счету
         public decimal Sum { get; private set; }
         // Процент начислений
-        public int Percentage { get; private set; }
+        public float Percentage { get; private set; }
         // Уникальный идентификатор счета
         public int Id { get; private set; }
+
+        public readonly AccountType type;
 
         // вызов событий
         private void CallEvent(AccountEventArgs e, AccountStateHandler handler)
@@ -98,17 +103,13 @@ namespace BankLib
             OnClosed(new AccountEventArgs($"Счет {Id} закрыт.  Итоговая сумма: {Sum}", Sum));
         }
 
-        protected internal void IncrementDays()
-        {
-            _days++;
-        }
-
         // начисление процентов
-        protected internal virtual void Calculate()
+        public virtual void Calculate(DateTime date)
         {
-            decimal increment = Sum * Percentage / 100;
-            Sum = Sum + increment;
+            decimal increment = Sum * (decimal)Percentage / 100;
+            Sum += increment;
             OnCalculated(new AccountEventArgs($"Начислены проценты в размере: {increment}", increment));
+            dateOpen = date;
         }
     }
 }
